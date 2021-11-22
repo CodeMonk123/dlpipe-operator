@@ -1,0 +1,24 @@
+# permissions for end users to edit dlpipejobs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dlpipejob-editor-role
+rules:
+- apiGroups:
+  - dlpipe.github.com
+  resources:
+  - dlpipejobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dlpipe.github.com
+  resources:
+  - dlpipejobs/status
+  verbs:
+  - get

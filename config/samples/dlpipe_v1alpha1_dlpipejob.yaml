@@ -1,0 +1,6 @@
+apiVersion: dlpipe.github.com/v1alpha1
+kind: DLpipeJob
+metadata:
+  name: dlpipejob-sample
+spec:
+  # TODO(user): Add fields here
