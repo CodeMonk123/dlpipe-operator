@@ -17,6 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"time"
+
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,14 +33,41 @@ type DLpipeJobSpec struct {
 
 	// Foo is an example field of DLpipeJob. Edit dlpipejob_types.go to remove/update
 	// Foo string `json:"foo,omitempty"`
-	SourceCodePath string `json:"sourceCodePath"`
-	DatasetPath    string `json:"datasetPath"`
+	WorldSize   *int64         `json:"worldSize"`
+	JobTemplate corev1.PodSpec `json:"jobTemplate"`
 }
+
+type DLJobPhase string
+
+const (
+	JobPending       DLJobPhase = "JobPending"
+	WaitingForMaster DLJobPhase = "WaitingForMaster"
+	MasterIsReady    DLJobPhase = "MasterIsReady"
+	JobRunning       DLJobPhase = "JobRunning"
+	Completed        DLJobPhase = "Completed"
+	Failed           DLJobPhase = "Failed"
+)
 
 // DLpipeJobStatus defines the observed state of DLpipeJob
 type DLpipeJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	JobPhase   DLJobPhase   `json:"phase"`
+	StartTime  *metav1.Time `json:"startTime"`
+	MasterAddr string       `json:"masterAddr,omitempty"`
+}
+
+func (jobStatus *DLpipeJobStatus) SetDefault() bool {
+	changed := false
+	if jobStatus.JobPhase == "" {
+		jobStatus.JobPhase = JobPending
+		jobStatus.MasterAddr = ""
+		now := metav1.NewTime(time.Now())
+		jobStatus.StartTime = &now
+		changed = true
+	}
+
+	return changed
 }
 
 //+kubebuilder:object:root=true
@@ -50,6 +80,10 @@ type DLpipeJob struct {
 
 	Spec   DLpipeJobSpec   `json:"spec,omitempty"`
 	Status DLpipeJobStatus `json:"status,omitempty"`
+}
+
+func (j *DLpipeJob) SetDefaultStatus() bool {
+	return j.Status.SetDefault()
 }
 
 //+kubebuilder:object:root=true
