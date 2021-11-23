@@ -2,5 +2,41 @@ apiVersion: dlpipe.github.com/v1alpha1
 kind: DLpipeJob
 metadata:
   name: dlpipejob-sample
+  namespace: dlpipe
 spec:
-  # TODO(user): Add fields here
+  worldSize: 6
+  jobTemplate:
+    restartPolicy: Never
+    containers:
+    - name: dlpipe-container
+      image: registry.cn-hangzhou.aliyuncs.com/cuizihan/pytorch:experiment
+      imagePullPolicy: IfNotPresent
+      workingDir: /share/dlpipe/benchmark
+      resources:
+        limits:
+          memory: "24Gi"
+          nvidia.com/gpu: 1
+          cpu: 6
+        requests:
+          nvidia.com/gpu: 1
+          memory: "12Gi"
+          cpu: 4
+      volumeMounts:
+      - name: profile
+        mountPath: /share/dlpipe
+      - name: dshm
+        mountPath: /dev/shm
+      - name: imagenet
+        mountPath: /data/imagenet
+      command: [ "python", "benchmark_pipeline_k8s.py" ]
+    volumes:
+    - name: profile
+      hostPath:
+        path: /share/dlpipe
+    - name: dshm
+      emptyDir:
+        medium: Memory
+    - name: imagenet
+      hostPath:
+        path: /data/share/dataset/ILSVRC-2012-ImageNet-mini
+  

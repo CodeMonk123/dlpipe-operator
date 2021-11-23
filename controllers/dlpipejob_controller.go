@@ -71,16 +71,18 @@ func (r *DLpipeJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// check phase and schedule
 	if dlpipeJob.Status.JobPhase == v1alpha1.JobPending {
-		err := r.CreateMaster(ctx, &dlpipeJob)
-		if err != nil {
-			logger.Error(err, "create master error")
-			return ctrl.Result{}, err
-		}
 		dlpipeJob.Status.JobPhase = v1alpha1.WaitingForMaster
 		if err := r.Status().Update(ctx, &dlpipeJob); err != nil {
 			logger.Error(err, "update status to \"WaingForMaster\" error")
 			return ctrl.Result{}, err
 		}
+
+		err := r.CreateMaster(ctx, &dlpipeJob)
+		if err != nil {
+			logger.Error(err, "create master error")
+			return ctrl.Result{}, err
+		}
+
 		return ctrl.Result{RequeueAfter: time.Duration(3 * time.Second)}, nil
 	}
 
@@ -145,6 +147,8 @@ func (r *DLpipeJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 			return ctrl.Result{}, nil
 		}
+
+		return ctrl.Result{RequeueAfter: time.Duration(5 * time.Second)}, nil
 	}
 
 	return ctrl.Result{}, nil

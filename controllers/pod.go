@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/CodeMonk123/dlpipe-operator/api/v1alpha1"
@@ -14,15 +15,10 @@ import (
 
 func (r *DLpipeJobReconciler) CreateWorker(ctx context.Context, dlpipeJob *v1alpha1.DLpipeJob, rank int) error {
 	podTemplate := dlpipeJob.Spec.JobTemplate.DeepCopy()
-	envWorldSize := corev1.EnvVar{Name: "WorldSize", Value: strconv.Itoa(int(*dlpipeJob.Spec.WorldSize))}
+	envWorldSize := corev1.EnvVar{Name: "WORLD_SIZE", Value: strconv.Itoa(int(*dlpipeJob.Spec.WorldSize))}
 	envRank := corev1.EnvVar{Name: "RANK", Value: strconv.Itoa(rank)}
-	envMasterAddr := corev1.EnvVar{Name: "MASTER_ADDR", Value: strconv.Itoa(rank)}
-	for _, container := range podTemplate.Containers {
-		container.Env = append(container.Env, envMasterAddr)
-		container.Env = append(container.Env, envRank)
-		container.Env = append(container.Env, envWorldSize)
-	}
-
+	envMasterAddr := corev1.EnvVar{Name: "MASTER_ADDR", Value: "tcp://" + dlpipeJob.Status.MasterAddr + ":7890"}
+	podTemplate.Containers[0].Env = append(podTemplate.Containers[0].Env, envWorldSize, envRank, envMasterAddr)
 	workerPod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dlpipeJob.Name + "-worker-" + strconv.Itoa(rank),
@@ -38,10 +34,9 @@ func (r *DLpipeJobReconciler) CreateWorker(ctx context.Context, dlpipeJob *v1alp
 
 func (r *DLpipeJobReconciler) CreateMaster(ctx context.Context, dlpipeJob *v1alpha1.DLpipeJob) error {
 	podTemplate := dlpipeJob.Spec.JobTemplate.DeepCopy()
-	envWorldSize := corev1.EnvVar{Name: "WorldSize", Value: strconv.Itoa(int(*dlpipeJob.Spec.WorldSize))}
-	for _, container := range podTemplate.Containers {
-		container.Env = append(container.Env, envWorldSize)
-	}
+	envWorldSize := corev1.EnvVar{Name: "WORLD_SIZE", Value: strconv.Itoa(int(*dlpipeJob.Spec.WorldSize))}
+	envRank := corev1.EnvVar{Name: "RANK", Value: strconv.Itoa(0)}
+	podTemplate.Containers[0].Env = append(podTemplate.Containers[0].Env, envWorldSize, envRank)
 	masterPod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dlpipeJob.Name + "-master",
@@ -51,6 +46,7 @@ func (r *DLpipeJobReconciler) CreateMaster(ctx context.Context, dlpipeJob *v1alp
 		Spec: *podTemplate,
 	}
 	controllerutil.SetOwnerReference(dlpipeJob, &masterPod, r.Scheme)
+	fmt.Println(masterPod)
 	err := r.Client.Create(ctx, &masterPod)
 	return err
 }
