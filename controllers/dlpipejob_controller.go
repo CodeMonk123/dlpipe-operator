@@ -135,7 +135,7 @@ func (r *DLpipeJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				logger.Error(err, "update status to \"Failed\" error")
 				return ctrl.Result{}, err
 			}
-			r.DeleteAllPod(ctx, &dlpipeJob)
+			// r.DeleteAllPod(ctx, &dlpipeJob)
 			return ctrl.Result{}, nil
 		}
 
