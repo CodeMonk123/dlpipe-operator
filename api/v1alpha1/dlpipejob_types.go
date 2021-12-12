@@ -35,6 +35,7 @@ type DLpipeJobSpec struct {
 	// Foo string `json:"foo,omitempty"`
 	WorldSize   *int64         `json:"worldSize"`
 	JobTemplate corev1.PodSpec `json:"jobTemplate"`
+	Placement   map[string]int `json:"placement,omitempty"`
 }
 
 type DLJobPhase string

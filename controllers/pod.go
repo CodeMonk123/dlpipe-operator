@@ -13,7 +13,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *DLpipeJobReconciler) CreateWorker(ctx context.Context, dlpipeJob *v1alpha1.DLpipeJob, rank int) error {
+const HostNameKey = "kubernetes.io/hostname"
+
+func (r *DLpipeJobReconciler) CreateWorker(ctx context.Context, dlpipeJob *v1alpha1.DLpipeJob, rank int, placements []string) error {
 	podTemplate := dlpipeJob.Spec.JobTemplate.DeepCopy()
 	envWorldSize := corev1.EnvVar{Name: "WORLD_SIZE", Value: strconv.Itoa(int(*dlpipeJob.Spec.WorldSize))}
 	envRank := corev1.EnvVar{Name: "RANK", Value: strconv.Itoa(rank)}
@@ -27,12 +29,17 @@ func (r *DLpipeJobReconciler) CreateWorker(ctx context.Context, dlpipeJob *v1alp
 		},
 		Spec: *podTemplate,
 	}
+	if placements != nil {
+		nodeName := placements[rank]
+		workerPod.Spec.NodeSelector = map[string]string{HostNameKey: nodeName}
+	}
+
 	controllerutil.SetOwnerReference(dlpipeJob, &workerPod, r.Scheme)
 	err := r.Client.Create(ctx, &workerPod)
 	return err
 }
 
-func (r *DLpipeJobReconciler) CreateMaster(ctx context.Context, dlpipeJob *v1alpha1.DLpipeJob) error {
+func (r *DLpipeJobReconciler) CreateMaster(ctx context.Context, dlpipeJob *v1alpha1.DLpipeJob, placements []string) error {
 	podTemplate := dlpipeJob.Spec.JobTemplate.DeepCopy()
 	envWorldSize := corev1.EnvVar{Name: "WORLD_SIZE", Value: strconv.Itoa(int(*dlpipeJob.Spec.WorldSize))}
 	envRank := corev1.EnvVar{Name: "RANK", Value: strconv.Itoa(0)}
@@ -45,6 +52,11 @@ func (r *DLpipeJobReconciler) CreateMaster(ctx context.Context, dlpipeJob *v1alp
 		},
 		Spec: *podTemplate,
 	}
+	if placements != nil {
+		nodeName := placements[0]
+		masterPod.Spec.NodeSelector = map[string]string{HostNameKey: nodeName}
+	}
+
 	controllerutil.SetOwnerReference(dlpipeJob, &masterPod, r.Scheme)
 	fmt.Println(masterPod)
 	err := r.Client.Create(ctx, &masterPod)

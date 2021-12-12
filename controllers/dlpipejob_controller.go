@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/CodeMonk123/dlpipe-operator/api/v1alpha1"
@@ -60,6 +61,24 @@ func (r *DLpipeJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// extract placements from dlpipejob spec
+	placements := []string{}
+	if dlpipeJob.Spec.Placement != nil {
+		nodes := []string{}
+		for node := range dlpipeJob.Spec.Placement {
+			nodes = append(nodes, node)
+		}
+		sort.Strings(nodes)
+		for _, node := range nodes {
+			workerNum := dlpipeJob.Spec.Placement[node]
+			for i := 0; i < workerNum; i++ {
+				placements = append(placements, node)
+			}
+		}
+	} else {
+		placements = nil
+	}
+
 	// set default status and requeue
 	if dlpipeJob.SetDefaultStatus() {
 		if err := r.Status().Update(ctx, &dlpipeJob); err != nil {
@@ -77,7 +96,7 @@ func (r *DLpipeJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, err
 		}
 
-		err := r.CreateMaster(ctx, &dlpipeJob)
+		err := r.CreateMaster(ctx, &dlpipeJob, placements)
 		if err != nil {
 			logger.Error(err, "create master error")
 			return ctrl.Result{}, err
@@ -118,7 +137,7 @@ func (r *DLpipeJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 
 		for i := 1; i < int(*dlpipeJob.Spec.WorldSize); i++ {
-			err := r.CreateWorker(ctx, &dlpipeJob, i)
+			err := r.CreateWorker(ctx, &dlpipeJob, i, placements)
 			if err != nil {
 				logger.Error(err, fmt.Sprintf("create worker[%d] error", i))
 				return ctrl.Result{}, err
