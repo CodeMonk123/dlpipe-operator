@@ -6555,6 +6555,10 @@ spec:
                 required:
                 - containers
                 type: object
+              placement:
+                additionalProperties:
+                  type: integer
+                type: object
               worldSize:
                 description: Foo is an example field of DLpipeJob. Edit dlpipejob_types.go
                   to remove/update Foo string `json:"foo,omitempty"`
