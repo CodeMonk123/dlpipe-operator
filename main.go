@@ -33,7 +33,6 @@ import (
 
 	dlpipev1alpha1 "github.com/CodeMonk123/dlpipe-operator/api/v1alpha1"
 	"github.com/CodeMonk123/dlpipe-operator/controllers"
-	"github.com/CodeMonk123/dlpipe-operator/k8sutil"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -80,9 +79,8 @@ func main() {
 	}
 
 	if err = (&controllers.DLpipeJobReconciler{
-		Client:     mgr.GetClient(),
-		Scheme:     mgr.GetScheme(),
-		KubeClient: k8sutil.NewKubeClient(),
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DLpipeJob")
 		os.Exit(1)

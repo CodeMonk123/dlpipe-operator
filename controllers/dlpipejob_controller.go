@@ -25,7 +25,6 @@ import (
 	"github.com/CodeMonk123/dlpipe-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -34,8 +33,7 @@ import (
 // DLpipeJobReconciler reconciles a DLpipeJob object
 type DLpipeJobReconciler struct {
 	client.Client
-	KubeClient kubernetes.Interface
-	Scheme     *runtime.Scheme
+	Scheme *runtime.Scheme
 }
 
 //+kubebuilder:rbac:groups=dlpipe.github.com,resources=dlpipejobs,verbs=get;list;watch;create;update;patch;delete

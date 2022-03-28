@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -99,11 +100,8 @@ func (r *DLpipeJobReconciler) GetMasterAddr(ctx context.Context, dlpipeJob *v1al
 func (r *DLpipeJobReconciler) IsJobFailed(ctx context.Context, dlpipeJob *v1alpha1.DLpipeJob) bool {
 	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"job": dlpipeJob.Name}}
 	labelMap, _ := metav1.LabelSelectorAsMap(&labelSelector)
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labelMap).String(),
-	}
-
-	pods, _ := r.KubeClient.CoreV1().Pods(dlpipeJob.Namespace).List(ctx, listOptions)
+	pods := corev1.PodList{}
+	_ = r.Client.List(ctx, &pods, &client.ListOptions{Namespace: dlpipeJob.Namespace, LabelSelector: labels.SelectorFromSet(labelMap)})
 	for _, pod := range pods.Items {
 		if pod.Status.Phase == corev1.PodFailed || pod.Status.Phase == corev1.PodUnknown {
 			return true
@@ -115,11 +113,8 @@ func (r *DLpipeJobReconciler) IsJobFailed(ctx context.Context, dlpipeJob *v1alph
 func (r *DLpipeJobReconciler) IsJobSucceeded(ctx context.Context, dlpipeJob *v1alpha1.DLpipeJob) bool {
 	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"job": dlpipeJob.Name}}
 	labelMap, _ := metav1.LabelSelectorAsMap(&labelSelector)
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labelMap).String(),
-	}
-
-	pods, _ := r.KubeClient.CoreV1().Pods(dlpipeJob.Namespace).List(ctx, listOptions)
+	pods := corev1.PodList{}
+	_ = r.Client.List(ctx, &pods, &client.ListOptions{Namespace: dlpipeJob.Namespace, LabelSelector: labels.SelectorFromSet(labelMap)})
 	for _, pod := range pods.Items {
 		if pod.Status.Phase != corev1.PodSucceeded {
 			return false
@@ -131,11 +126,8 @@ func (r *DLpipeJobReconciler) IsJobSucceeded(ctx context.Context, dlpipeJob *v1a
 func (r *DLpipeJobReconciler) DeleteAllPod(ctx context.Context, dlpipeJob *v1alpha1.DLpipeJob) {
 	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"job": dlpipeJob.Name}}
 	labelMap, _ := metav1.LabelSelectorAsMap(&labelSelector)
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labelMap).String(),
-	}
-
-	pods, _ := r.KubeClient.CoreV1().Pods(dlpipeJob.Namespace).List(ctx, listOptions)
+	pods := corev1.PodList{}
+	_ = r.Client.List(ctx, &pods, &client.ListOptions{Namespace: dlpipeJob.Namespace, LabelSelector: labels.SelectorFromSet(labelMap)})
 	for _, pod := range pods.Items {
 		_ = r.Client.Delete(ctx, &pod)
 	}
