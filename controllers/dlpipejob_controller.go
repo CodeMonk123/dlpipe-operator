@@ -54,7 +54,7 @@ func (r *DLpipeJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	logger := log.FromContext(ctx)
 	logger.Info("Enter Reconcile")
 	dlpipeJob := v1alpha1.DLpipeJob{}
-	err := r.Client.Get(ctx, req.NamespacedName, &dlpipeJob)
+	err := r.Get(ctx, req.NamespacedName, &dlpipeJob)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}

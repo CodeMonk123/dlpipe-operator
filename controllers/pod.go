@@ -36,7 +36,7 @@ func (r *DLpipeJobReconciler) CreateWorker(ctx context.Context, dlpipeJob *v1alp
 	}
 
 	controllerutil.SetOwnerReference(dlpipeJob, &workerPod, r.Scheme)
-	err := r.Client.Create(ctx, &workerPod)
+	err := r.Create(ctx, &workerPod)
 	return err
 }
 
@@ -60,7 +60,7 @@ func (r *DLpipeJobReconciler) CreateMaster(ctx context.Context, dlpipeJob *v1alp
 
 	controllerutil.SetOwnerReference(dlpipeJob, &masterPod, r.Scheme)
 	fmt.Println(masterPod)
-	err := r.Client.Create(ctx, &masterPod)
+	err := r.Create(ctx, &masterPod)
 	return err
 }
 
@@ -71,7 +71,7 @@ func (r *DLpipeJobReconciler) IsMasterReady(ctx context.Context, dlpipeJob *v1al
 		Name:      dlpipeJob.Name + "-master",
 	}
 
-	err := r.Client.Get(ctx, masterNamespacedName, &masterPod)
+	err := r.Get(ctx, masterNamespacedName, &masterPod)
 	if err != nil {
 		return err, false
 	}
@@ -90,7 +90,7 @@ func (r *DLpipeJobReconciler) GetMasterAddr(ctx context.Context, dlpipeJob *v1al
 		Namespace: dlpipeJob.Namespace,
 		Name:      dlpipeJob.Name + "-master",
 	}
-	err := r.Client.Get(ctx, masterNamespacedName, &masterPod)
+	err := r.Get(ctx, masterNamespacedName, &masterPod)
 	if err != nil {
 		return err, ""
 	}
@@ -101,7 +101,7 @@ func (r *DLpipeJobReconciler) IsJobFailed(ctx context.Context, dlpipeJob *v1alph
 	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"job": dlpipeJob.Name}}
 	labelMap, _ := metav1.LabelSelectorAsMap(&labelSelector)
 	pods := corev1.PodList{}
-	_ = r.Client.List(ctx, &pods, &client.ListOptions{Namespace: dlpipeJob.Namespace, LabelSelector: labels.SelectorFromSet(labelMap)})
+	_ = r.List(ctx, &pods, &client.ListOptions{Namespace: dlpipeJob.Namespace, LabelSelector: labels.SelectorFromSet(labelMap)})
 	for _, pod := range pods.Items {
 		if pod.Status.Phase == corev1.PodFailed || pod.Status.Phase == corev1.PodUnknown {
 			return true
@@ -114,7 +114,7 @@ func (r *DLpipeJobReconciler) IsJobSucceeded(ctx context.Context, dlpipeJob *v1a
 	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"job": dlpipeJob.Name}}
 	labelMap, _ := metav1.LabelSelectorAsMap(&labelSelector)
 	pods := corev1.PodList{}
-	_ = r.Client.List(ctx, &pods, &client.ListOptions{Namespace: dlpipeJob.Namespace, LabelSelector: labels.SelectorFromSet(labelMap)})
+	_ = r.List(ctx, &pods, &client.ListOptions{Namespace: dlpipeJob.Namespace, LabelSelector: labels.SelectorFromSet(labelMap)})
 	for _, pod := range pods.Items {
 		if pod.Status.Phase != corev1.PodSucceeded {
 			return false
@@ -127,8 +127,8 @@ func (r *DLpipeJobReconciler) DeleteAllPod(ctx context.Context, dlpipeJob *v1alp
 	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"job": dlpipeJob.Name}}
 	labelMap, _ := metav1.LabelSelectorAsMap(&labelSelector)
 	pods := corev1.PodList{}
-	_ = r.Client.List(ctx, &pods, &client.ListOptions{Namespace: dlpipeJob.Namespace, LabelSelector: labels.SelectorFromSet(labelMap)})
+	_ = r.List(ctx, &pods, &client.ListOptions{Namespace: dlpipeJob.Namespace, LabelSelector: labels.SelectorFromSet(labelMap)})
 	for _, pod := range pods.Items {
-		_ = r.Client.Delete(ctx, &pod)
+		_ = r.Delete(ctx, &pod)
 	}
 }
